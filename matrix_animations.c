@@ -11,11 +11,8 @@ void Light_LED(struct ShiftRegister *sr_in,struct ShiftRegister *sr_out, uint8_t
     if (r > LED_MATRIX_WIDTH || c > LED_MATRIX_HEIGHT || (r==4 && c==6)) {
         return; // Dead LED or out of bounds
     }
-    uint8_t data = 0;
-    data |= (1 << r-1);
-    Shift_Out(sr_in, data);
-    data |= (1 << c-1);
-    Shift_Out(sr_out, ~data);
+    Shift_Out(sr_in, (1 << (r-1)));
+    Shift_Out(sr_out, ~(1 << (c-1))); // If columns are active low
 }
 
 void Clear_LED(struct ShiftRegister *sr_in, struct ShiftRegister *sr_out)
@@ -75,14 +72,13 @@ void Running_LED(struct ShiftRegister *sr_in, struct ShiftRegister *sr_out)
     }
 }
 
-void picture_draw(struct ShiftRegister *sr_in, struct ShiftRegister *sr_out, uint8_t row_data[8]) //column multiplex by row
-{   
-    for (int r = 0; r<8 ; r++)
-        {
-            Shift_Out(sr_in,(1<<r));
-            Shift_Out(sr_out,~(row_data[r]));
-            sleep_us(500);
-        }
+void picture_draw(struct ShiftRegister *sr_in, struct ShiftRegister *sr_out, uint8_t row_data[8]) // column multiplex by row
+{
+    for (int r = 0; r < 8; r++) {
+        Shift_Out(sr_in, (1 << r));           // Select row r
+        Shift_Out(sr_out, ~row_data[r]);      // Output columns (active low)
+        sleep_us(500);
+    }
 }
 
 void animate(struct ShiftRegister *sr_in, struct ShiftRegister *sr_out, uint8_t frames, uint8_t data[frames][8],uint8_t delay_ms,bool reverse) {
